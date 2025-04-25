@@ -5,10 +5,14 @@ import { handleInputErrors } from '../middleware/validation'
 import { TaskController } from '../controllers/TaskController'
 import { validateProjectExists } from '../middleware/project'
 import { taskBelongToProject, taskExists } from '../middleware/task'
+import { authenticate } from '../middleware/auth'
 
 const router = Router()
 
-router.post('/', 
+//le decimos que todos van a usar este middleware
+router.use(authenticate)
+
+router.post('/',
     body('projectName')
         .notEmpty().withMessage('El nombre del proyecto es obligatorio'),
     body('clientName')
@@ -19,7 +23,8 @@ router.post('/',
     ProjectController.createProject
 )
 
-router.get('/', ProjectController.getAllProjects)
+router.get('/',
+    ProjectController.getAllProjects)
 
 //isMongoId es para manejar los id como los maneja esa BDD (ej. 67e68e633dbeaee07b7e3aa0)
 router.get('/:id', 
@@ -68,7 +73,8 @@ router.get('/:projectId/tasks/:taskId',
     TaskController.getTaskById) 
 
 router.put('/:projectId/tasks/:taskId',
-    param('taskId').isMongoId().withMessage('ID no valido'),
+    param('taskId')
+        .isMongoId().withMessage('ID no valido'),
     body('name')
         .notEmpty().withMessage('El nombre de la tarea es obligatorio'),
     body('description')

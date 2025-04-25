@@ -7,6 +7,9 @@ export class ProjectController {
         
         const project = new Project(req.body)
 
+        //Asigna un manager
+        project.manager = req.user.id
+
         try {
             await project.save() //La otra opcion es hacerlo aca directamente con await Project.create(req.body) - De la forma en la que esta es mejor
             res.send('Proyecto creado correctamente')
@@ -17,7 +20,13 @@ export class ProjectController {
     
     static getAllProjects = async (req: Request, res: Response) => {
         try {
-            const projects = await Project.find({})
+            const projects = await Project.find({
+                /* aca filtramos la busqueda y pedimos que solo nos devuelva los proyectos
+                asociados al usuario que los creo. */
+                $or: [
+                    {manager: {$in: req.user.id}}
+                ]
+            })
             res.json(projects)
         } catch (error) {
             console.log(error)
@@ -34,6 +43,11 @@ export class ProjectController {
             //cuando cambiabamos el ultimo digito del id se imprimia un null por eso hice esto.
             if (!project) {
                 res.status(404).json({ message: "Proyecto no encontrado" });
+                return;
+            }
+
+            if(project.manager.toString() !== req.user.id.toString()){
+                res.status(404).json({ message: "Accion no valida" });
                 return;
             }
 
@@ -54,6 +68,11 @@ export class ProjectController {
                 return;
             }
 
+            if(project.manager.toString() !== req.user.id.toString()){
+                res.status(404).json({ message: "Solo el manager puede actualizar un proyecto" });
+                return;
+            }
+
             await project.save()
             res.send('Proyecto actualizado correctamente')
             
@@ -70,6 +89,11 @@ export class ProjectController {
 
             if (!project) {
                 res.status(404).json({ message: "Proyecto no encontrado" });
+                return;
+            }
+
+            if(project.manager.toString() !== req.user.id.toString()){
+                res.status(404).json({ message: "Solo el manager puede eliminar un proyecto" });
                 return;
             }
 

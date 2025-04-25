@@ -4,6 +4,7 @@ import { checkPassword, hashPassword } from '../utils/auth'
 import Token from '../models/Token'
 import { generateToken } from '../utils/token'
 import { AuthEmail } from '../emails/AuthEmail'
+import { generateJWT } from '../utils/jwt'
 
 export class AuthController {
 
@@ -92,6 +93,8 @@ export class AuthController {
                 const token = new Token()
                 token.token = generateToken()
                 token.user = user.id
+                
+                await token.save()
 
                 //Enviar email
                 AuthEmail.sendConfirmationEmail({
@@ -99,10 +102,8 @@ export class AuthController {
                     name: user.name,
                     token: token.token
                 })
-                await token.save()
-                res.send('Se volvió a enviar un mail para la confirmacion de cuenta')
 
-                const error = new Error('La cuenta no ha sido confirmada')
+                const error = new Error('La cuenta no ha sido confirmada, hemos enviado un email de confirmacion')
                 res.status(401).json({error: error.message})
                 return
             }
@@ -115,11 +116,142 @@ export class AuthController {
                 return
             }
 
-            res.send('Autenticado correctamente...')
+            //Aca generamos el JWT para la autenticacion (puse que expire en 1dia)
+            const token = generateJWT({id: user.id})
+            res.send(token)
 
         } catch (error) {
             res.status(500).json({error: 'Hubo un error'})
         }
+    }
+
+    //reutilizamos el de createAccount con algunas modificaciones
+    static requestConfirmationCode = async (req: Request, res: Response) => {
+        try {
+            const {email} = req.body         //its not to be used all the time req.body...
+
+            //Usuario existe
+            const user = await User.findOne({email})
+            if(!user){
+                const error = new Error('El usuario no esta registrado')
+                res.status(404).json({error: error.message})
+                return
+            }
+
+            if(user.confirmed){
+                const error = new Error('El usuario ya esta confirmado')
+                res.status(403).json({error: error.message})
+                return
+            }
+
+            //Generar el token
+            const token = new Token()
+            token.token = generateToken()
+            token.user = user.id
+
+            //Enviar email
+            AuthEmail.sendConfirmationEmail({
+                email: user.email,
+                name: user.name,
+                token: token.token
+            })
+
+            await user.save()
+            await token.save()
+
+            res.send('Se envió un nuevo token a tu email')
+        } catch (error) {
+            res.status(500).json({error: 'Hubo un error'})
+        }
+    }
+
+    static forgotPassword = async (req: Request, res: Response) => {
+        try {
+            const {email} = req.body         //its not to be used all the time req.body...
+
+            //Usuario existe
+            const user = await User.findOne({email})
+            if(!user){
+                const error = new Error('El usuario no esta registrado')
+                res.status(404).json({error: error.message})
+                return
+            }
+
+            //Generar el token
+            const token = new Token()
+            token.token = generateToken()
+            token.user = user.id
+            
+            await token.save()  //solo dejamos esta linea, es la unica que nos interesa en este caso
+
+            //Enviar email
+            AuthEmail.sendPasswordResetToken({
+                email: user.email,
+                name: user.name,
+                token: token.token
+            })
+
+            res.send('Revisa tu email y sigue los pasos')
+        } catch (error) {
+            res.status(500).json({error: 'Hubo un error'})
+        }
+    }
+
+    static validateToken = async (req: Request, res: Response) => {
+        try {
+            const {token} = req.body
+
+            //Verificar que exista el token
+            const tokenExist = await Token.findOne({token})
+            if(!tokenExist){
+                const error = new Error('Token no valido')
+                res.status(404).json({error: error.message})
+                return
+            }
+
+            res.send('Token valido, define tu nueva clave')
+
+        } catch (error) {
+            res.status(500).json({error: 'Hubo un error'})
+        }
+    }
+
+    static updatePasswordWithToken = async (req: Request, res: Response) => {
+        try {
+            //el token lo vamos a leer desde el parametro
+            const {token} = req.params
+
+            //Verificar que exista el token
+            const tokenExist = await Token.findOne({token})
+            if(!tokenExist){
+                const error = new Error('Token no valido')
+                res.status(404).json({error: error.message})
+                return
+            }
+
+            //Buscamos el usuario asociado al modelo del token para hashear la nueva clave
+            const {password} = req.body
+
+            const user = await User.findById(tokenExist.user)
+            user.password = await hashPassword(password)
+
+            
+            await user.save()
+            await tokenExist.deleteOne()
+
+            res.send('La clave se modificó correctamente')
+
+        } catch (error) {
+            res.status(500).json({error: 'Hubo un error'})
+        }
+    }
+
+    /* solo muestra la informacion del usuario para que la url principal no muestre el sitio y quede
+    cargando como si estuviera buscando proyectos del usuario, no hay autenticacion entonces no deberia
+    poder verlo. */
+    static user = async (req: Request, res: Response) => {
+        res.json(req.user)
+        return 
     }
 
 }
