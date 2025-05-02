@@ -250,8 +250,12 @@ export class AuthController {
     cargando como si estuviera buscando proyectos del usuario, no hay autenticacion entonces no deberia
     poder verlo. */
     static user = async (req: Request, res: Response) => {
-        res.json(req.user)
-        return 
+        try {
+            res.json(req.user)
+            return 
+        } catch (error) {
+            console.log(error)
+        }
     }
 
 }

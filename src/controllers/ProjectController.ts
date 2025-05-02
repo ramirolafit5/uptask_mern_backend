@@ -23,8 +23,10 @@ export class ProjectController {
             const projects = await Project.find({
                 /* aca filtramos la busqueda y pedimos que solo nos devuelva los proyectos
                 asociados al usuario que los creo. */
+                /* ademas ponemos para que te aparezca si perteneces a algun proyecto tmb */
                 $or: [
-                    {manager: {$in: req.user.id}}
+                    {manager: {$in: req.user.id}},
+                    {team: {$in: req.user.id}}
                 ]
             })
             res.json(projects)
@@ -46,7 +48,7 @@ export class ProjectController {
                 return;
             }
 
-            if(project.manager.toString() !== req.user.id.toString()){
+            if(project.manager.toString() !== req.user.id.toString() && !project.team.includes(req.user.id)){
                 res.status(404).json({ message: "Accion no valida" });
                 return;
             }

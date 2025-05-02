@@ -4,8 +4,9 @@ import { body, param } from 'express-validator'
 import { handleInputErrors } from '../middleware/validation'
 import { TaskController } from '../controllers/TaskController'
 import { validateProjectExists } from '../middleware/project'
-import { taskBelongToProject, taskExists } from '../middleware/task'
+import { hasAuthorization, taskBelongToProject, taskExists } from '../middleware/task'
 import { authenticate } from '../middleware/auth'
+import { TeamMemberController } from '../controllers/TeamController'
 
 const router = Router()
 
@@ -53,13 +54,14 @@ router.delete('/:id',
 //aca validamos para todos los router que contienen ese parametro asi evitamos redundancia de codigo
 router.param('projectId', validateProjectExists)
 
-router.post('/:projectId/tasks', 
+router.post('/:projectId/tasks',
+    hasAuthorization,
     body('name')
         .notEmpty().withMessage('El nombre de la tarea es obligatorio'),
     body('description')
         .notEmpty().withMessage('La descripcion de la tarea es obligatoria'),
     handleInputErrors,
-    TaskController.createProject)
+    TaskController.createTask)
 
 router.get('/:projectId/tasks',
     TaskController.getProjectTasks) 
@@ -73,6 +75,7 @@ router.get('/:projectId/tasks/:taskId',
     TaskController.getTaskById) 
 
 router.put('/:projectId/tasks/:taskId',
+    hasAuthorization,
     param('taskId')
         .isMongoId().withMessage('ID no valido'),
     body('name')
@@ -83,6 +86,7 @@ router.put('/:projectId/tasks/:taskId',
     TaskController.updateTask)
 
 router.delete('/:projectId/tasks/:taskId',
+    hasAuthorization,
     param('taskId').isMongoId().withMessage('ID no valido'),
     handleInputErrors,
     TaskController.deleteTask)
@@ -92,5 +96,28 @@ router.post('/:projectId/tasks/:taskId/status',
     body('status').notEmpty().withMessage('El estado es obligatorio'),
     handleInputErrors,
     TaskController.changeStatus)
+
+/** Routes for teams */
+router.post('/:projectId/team/find',
+    body('email')
+        .isEmail().toLowerCase().withMessage('E-mail no valido'),
+    handleInputErrors,
+    TeamMemberController.findMemberByEmail)
+
+router.post('/:projectId/team',
+    body('id')
+        .isMongoId().withMessage('ID no valido'),
+    handleInputErrors,
+    TeamMemberController.addMemberById)
+
+router.delete('/:projectId/team/:userId',
+    param('userId')
+        .isMongoId().withMessage('ID no valido'),
+    handleInputErrors,
+    TeamMemberController.removeMemberById)
+
+router.get('/:projectId/team',
+    handleInputErrors,
+    TeamMemberController.getProjectTeam)
 
 export default router
