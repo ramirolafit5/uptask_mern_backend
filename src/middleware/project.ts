@@ -17,9 +17,10 @@ export async function validateProjectExists (req: Request, res: Response, next: 
         const {projectId} = req.params
         const project = await Project.findById(projectId)
 
-        if (!project) {
-            res.status(404).json({ message: "Proyecto no encontrado" });
-            return;
+        if(!project) {
+            const error = new Error('Proyecto no encontrado')
+            res.status(404).json({error: error.message})
+            return
         }
         //aca es donde asignamos nuestro proyecto al request
         req.project = project

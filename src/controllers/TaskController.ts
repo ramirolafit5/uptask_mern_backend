@@ -32,10 +32,12 @@ export class TaskController {
         try {
             const task = await Task.findById(req.task.id)
                             .populate({path: 'completedBy.user', select: 'id name email'})   //si aca no ponia todo me tiraba error, luego chequear eso
+                            //Esto se agrego luego de que se crearan las notas
+                            .populate({path: 'notes', populate: {path: 'createdBy', select: 'id name email'}})
 
             res.json(task)
         } catch (error) {
-            console.log(error)
+            res.status(500).json({ error: 'Hubo un error' });
         }
     }
 
