@@ -80,4 +80,32 @@ router.get('/user',
     AuthController.user
 )
 
+/** Profile */
+
+router.put('/profile',
+    authenticate,
+    body('name')
+        .notEmpty().withMessage('El nombre de la tarea es obligatorio'),
+    body('email')
+        .isEmail().withMessage('Email no valido'),
+    handleInputErrors,
+    AuthController.updateProfile
+)
+
+router.post('/profile/password',
+    authenticate,
+    body('current_password')
+        .notEmpty().withMessage('El password actual es obligatorio'),
+    body('password')
+        .isLength({min: 8}).withMessage('Colocar minimo 8 caracteres'),
+    body('password_confirmation').custom((value, {req}) => {
+        if(value !== req.body.password){
+            throw new Error('Los password no son iguales')
+        }
+        return true
+    }),
+    handleInputErrors,
+    AuthController.updateCurrentUserPassword
+)
+
 export default router

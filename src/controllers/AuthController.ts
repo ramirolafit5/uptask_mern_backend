@@ -66,7 +66,7 @@ export class AuthController {
             await user.save()
             await tokenExist.deleteOne()
 
-            res.send('Cuenta confirmada correctamente')
+            res.send('Perfil actualizado correctamente')
 
         } catch (error) {
             res.status(500).json({error: 'Hubo un error'})
@@ -255,6 +255,57 @@ export class AuthController {
             return 
         } catch (error) {
             console.log(error)
+        }
+    }
+
+    static updateProfile = async (req: Request, res: Response) => {
+        const {name, email} = req.body
+        
+        const userExist = await User.findOne({email})
+        if(userExist && userExist.id.toString() !== req.user.id.toString()){
+            const error = new Error('Ese email ya esta registrado')
+            res.status(409).json({error: error.message})
+            return
+        }
+
+        req.user.name = name
+        req.user.email = email
+
+        try {
+            await req.user.save()
+            res.send('Perfil actualizado correctamente')
+        } catch (error) {
+            res.status(500).send('Hubo un error')
+        }
+
+    }
+
+    static updateCurrentUserPassword = async (req: Request, res: Response) => {
+        const {current_password, password} = req.body
+
+        const user = await User.findById(req.user.id) //usuario logeado
+        const isPasswordCorrect = await checkPassword(current_password, user.password)
+        if(!isPasswordCorrect){
+            const error = new Error('Password actual incorrecto')
+            res.status(401).json({error: error.message})
+            return
+        }
+
+        // Nueva verificación: comparar la nueva contraseña con la actual
+        const isNewPasswordSameAsCurrent = await checkPassword(password, user.password);
+
+        if (isNewPasswordSameAsCurrent) {
+            const error = new Error('La nueva contraseña no puede ser igual a la contraseña actual');
+            res.status(400).json({ error: error.message }); // Usamos 400 Bad Request para indicar un error del cliente
+            return;
+        }
+
+        try {
+            user.password = await hashPassword(password)
+            await user.save()
+            res.send('El password se modifico correctamente')
+        } catch (error) {
+            res.status(500).send('Hubo un error')
         }
     }
 
