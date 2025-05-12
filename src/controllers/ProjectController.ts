@@ -60,48 +60,22 @@ export class ProjectController {
     }
 
     static updateProject = async (req: Request, res: Response) => {
-        const {id} = req.params
-
         try {
-            const project = await Project.findByIdAndUpdate(id, req.body)
+            req.project.clientName = req.body.clientName
+            req.project.projectName = req.body.projectName
+            req.project.description = req.body.description
 
-            if (!project) {
-                res.status(404).json({ message: "Proyecto no encontrado" });
-                return;
-            }
-
-            if(project.manager.toString() !== req.user.id.toString()){
-                res.status(404).json({ message: "Solo el manager puede actualizar un proyecto" });
-                return;
-            }
-
-            await project.save()
+            await req.project.save()
             res.send('Proyecto actualizado correctamente')
-            
         } catch (error) {
             console.log(error)
         }
     }
 
     static deleteProject = async (req: Request, res: Response) => {
-        const {id} = req.params
-
         try {
-            const project = await Project.findById(id)
-
-            if (!project) {
-                res.status(404).json({ message: "Proyecto no encontrado" });
-                return;
-            }
-
-            if(project.manager.toString() !== req.user.id.toString()){
-                res.status(404).json({ message: "Solo el manager puede eliminar un proyecto" });
-                return;
-            }
-
-            await project.deleteOne()
+            await req.project.deleteOne()
             res.send('Proyecto eliminado correctamente')
-            
         } catch (error) {
             console.log(error)
         }

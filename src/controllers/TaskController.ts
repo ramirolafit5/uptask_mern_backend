@@ -42,56 +42,29 @@ export class TaskController {
     }
 
     static updateTask = async (req: Request, res: Response) => {
-        const {taskId} = req.params
         try {
-            const task = await Task.findById(taskId)
-
-            if (!task) {
-                res.status(404).json({ message: "Tarea no encontrada" });
-                return;
-            }
-            if (task.project.toString() !== req.project.id) {
-                res.status(400).json({ message: "Accion no valida" });
-                return;
-            }
-
-            //finalmente no uso findByIdAndUpdate prq no me toma las validaciones que hice
-            //entonces de esta forma agregamos manualmente y guardamos
-            task.name = req.body.name
-            task.description = req.body.description
-            await task.save()
+            req.task.name = req.body.name
+            req.task.description = req.body.description
+            await req.task.save()
 
             res.send('Task actualizada correctamente')
 
         } catch (error) {
-            console.log(error)
+            res.status(500).json({error: 'Hubo un error'})
         }
     }
 
     static deleteTask = async (req: Request, res: Response) => {
         try {
-            const {taskId} = req.params
-
-            /* aca podemos ver la diferencia entre findById y findByIdAndDelete.. En el que estamos usando
-            actualmente nos permite hacer ciertas validaciones antes de la eliminacion, en cambio de la
-            otra forma no nos hubiera dejado */
-            
-            const task = await Task.findById(taskId)
-
-            if (!task) {
-                res.status(404).json({ message: "Tarea no encontrada" });
-                return;
-            }
             //filtramos y nos quedamos con todas las task distintas a la que pasaron por parametro
-            req.project.tasks = req.project.tasks.filter( task => task.toString() !== taskId)
+            req.project.tasks = req.project.tasks.filter( task => task.toString() !== req.task.id.toString())
 
-            await task.deleteOne()
+            await req.task.deleteOne()
             await req.project.save()
 
             res.send('Task eliminada correctamente')
-
         } catch (error) {
-            console.log(error)
+            res.status(500).json({error: 'Hubo un error'})
         }
     }
 

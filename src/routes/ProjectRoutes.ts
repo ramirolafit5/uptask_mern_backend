@@ -34,26 +34,34 @@ router.get('/:id',
     handleInputErrors,
     ProjectController.getProjectById)
 
-router.put('/:id', 
-    param('id').isMongoId().withMessage('ID no valido'),
+//Traigo esto desde tasks para usar un middleware y quitar codigo de los controladores
+router.param('projectId', validateProjectExists)
+
+router.put('/:projectId',
+    param('projectId').isMongoId().withMessage('ID no valido'),
     body('projectName')
-        .notEmpty().withMessage('El nombre del proyecto es obligatorio'),
+    .notEmpty().withMessage('El nombre del proyecto es obligatorio'),
     body('clientName')
-        .notEmpty().withMessage('El nombre del cliente es obligatorio'),
+    .notEmpty().withMessage('El nombre del cliente es obligatorio'),
     body('description')
-        .notEmpty().withMessage('La descripcion del proyecto es obligatoria'),
+    .notEmpty().withMessage('La descripcion del proyecto es obligatoria'),
+    hasAuthorization,
     handleInputErrors,
     ProjectController.updateProject)
 
-router.delete('/:id', 
-    param('id').isMongoId().withMessage('ID no valido'),
+router.delete('/:projectId',
+    param('projectId').isMongoId().withMessage('ID no valido'),
+    hasAuthorization,
     handleInputErrors,
     ProjectController.deleteProject)
+
+
+// -------------------------------------------------------------------------------------------- //
 
 /* Routes for tasks */
 
 //aca validamos para todos los router que contienen ese parametro asi evitamos redundancia de codigo
-router.param('projectId', validateProjectExists)
+//router.param('projectId', validateProjectExists)
 
 router.post('/:projectId/tasks',
     hasAuthorization,
@@ -98,6 +106,9 @@ router.post('/:projectId/tasks/:taskId/status',
     handleInputErrors,
     TaskController.changeStatus)
 
+
+// -------------------------------------------------------------------------------------------- //
+
 /** Routes for teams */
 router.post('/:projectId/team/find',
     body('email')
@@ -121,7 +132,10 @@ router.get('/:projectId/team',
     handleInputErrors,
     TeamMemberController.getProjectTeam)
 
-/** Routes for teams */
+
+// -------------------------------------------------------------------------------------------- //
+
+    /** Routes for teams */
 router.post('/:projectId/tasks/:taskId/notes',
     body('content')
         .notEmpty().withMessage('El contenido de la nota es obligatorio'),

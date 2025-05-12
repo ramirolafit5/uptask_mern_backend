@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
+import Note from "./Note";
 
 //as const significa que solo se pueden leer pero no modificar.
 const taskStatus = {
@@ -66,6 +67,15 @@ export const TaskSchema : Schema = new Schema({
         }
     ]
 }, {timestamps: true})
+
+// Middleware
+TaskSchema.pre('deleteOne', { document: true }, async function () {
+    console.log("🛠️ Middleware de eliminación de tarea ejecutado");
+    const taskId = this._id;
+    const result = await Note.deleteMany({ task: taskId });
+    console.log(`📝 Se eliminaron ${result.deletedCount} notas`);
+});
+
 
 const Task = mongoose.model<ITask>('Task', TaskSchema)
 export default Task

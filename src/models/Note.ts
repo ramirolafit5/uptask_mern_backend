@@ -16,7 +16,7 @@ const NoteSchema: Schema = new Schema({
         ref: 'User',
         require: true
     },
-    tasks: {
+    task: {
         type: Types.ObjectId,
         ref: 'Task',
         require: true
