@@ -21,7 +21,10 @@ export class AuthEmail {
                         `
         })
 
-        console.log('Mensaje enviado', info.messageId)
+        //Para evitar que Jest se queje durante los tests.
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Mensaje enviado', info.messageId)
+        }
     }
 
     static sendPasswordResetToken = async (user: IEmail) => {
@@ -38,6 +41,9 @@ export class AuthEmail {
                         `
         })
 
-        console.log('Mensaje enviado', info.messageId)
+        //Para evitar que Jest se queje durante los tests.
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Mensaje enviado', info.messageId)
+        }
     }
 }

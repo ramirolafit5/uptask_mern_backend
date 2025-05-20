@@ -11,10 +11,14 @@ const connectDB = async () => {
     try {
         const connection = await mongoose_1.default.connect(process.env.DATABASE_URL);
         const url = `${connection.connection.host}:${connection.connection.port}`;
-        console.log(colors_1.default.cyan.bold(`MongoDB Conectado en: ${url}`));
+        if (process.env.NODE_ENV !== 'test') {
+            console.log(colors_1.default.cyan.bold(`MongoDB Conectado en: ${url}`));
+        }
     }
     catch (error) {
-        console.log(colors_1.default.red.bold('Error al conectar a MongoDB'));
+        if (process.env.NODE_ENV !== 'test') {
+            console.log(colors_1.default.red.bold('Error al conectar a MongoDB'));
+        }
         (0, node_process_1.exit)(1);
     }
 };

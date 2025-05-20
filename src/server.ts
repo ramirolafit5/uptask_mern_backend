@@ -9,7 +9,9 @@ import morgan from 'morgan'
 
 dotenv.config()
 
-connectDB()
+if (process.argv[2] !== '--test') {
+  connectDB()
+}
 
 const app = express()
 
@@ -23,8 +25,14 @@ app.use(morgan('dev'))
 //Leer datos de formulario
 app.use(express.json())
 
+// Ruta simple para pruebas
+app.get('/api', (req, res) => {
+  res.json({ msg: 'Desde API' })
+})
+
 //Routes
 app.use('/api/auth', AuthRoutes)
 app.use('/api/projects', ProjectRoutes)
+
 
 export default app
